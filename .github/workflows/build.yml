@@ -22,10 +22,10 @@ jobs:
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
 
-#      - name: build 1.17
-#        run: ./gradlew :v1_17:build
-#      - name: build 1.18
-#        run: ./gradlew :v1_18:build
+      - name: build 1.17
+        run: ./gradlew :v1_17:build
+      - name: build 1.18
+        run: ./gradlew :v1_18:build
       - name: build 1.19
         run: ./gradlew :v1_19:build
       - name: build 1.19.3
