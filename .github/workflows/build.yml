@@ -38,3 +38,92 @@ jobs:
         with:
           name: Artifacts
           path: ./**/build/libs/*.jar
+
+  upload:
+    needs: [planning,prepare,build1,build-package,build-Image_Builder,build-Image]
+    strategy:
+      matrix: ${{ fromJSON(needs.planning.outputs.matrix) }}
+    name: upload-${{ matrix.config }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 将存储库签出到运行器
+        uses: actions/checkout@v4
+
+      - name: 建立工作文件夹
+        run: |
+          cd $GITHUB_WORKSPACE
+          mkdir -p upload packagecompare
+          export UPLOAD_ROOT_PATH="$(pwd)/upload"
+          export PACKAGECOMPARE_ROOT_PATH="$(pwd)/packagecompare"
+          echo "UPLOAD_ROOT_PATH=$UPLOAD_ROOT_PATH" >> $GITHUB_ENV
+          echo "PACKAGECOMPARE_ROOT_PATH=$PACKAGECOMPARE_ROOT_PATH" >> $GITHUB_ENV
+
+      - name: 初始化环境
+        run: |
+          sudo -E apt update
+          sudo -E apt install -y git aria2 zip bzip2 curl rsync unzip wget python3 python3-distutils || sudo -E apt install -y git aria2 zip bzip2 curl rsync unzip wget python3 python3-distutils
+          sudo timedatectl set-timezone "Asia/Shanghai"
+
+      - name: 生成 release 所需变量
+        working-directory: ${{ env.UPLOAD_ROOT_PATH }}
+        run: |
+          export OPENWRT_TAG_BRANCH="1.20.1"
+          echo "OPENWRT_TAG_BRANCH=$OPENWRT_TAG_BRANCH" >> $GITHUB_ENV
+ 
+      - name: 下载固件
+        uses: actions/download-artifact@v4
+        with:
+          name: Artifacts
+          path: ${{ env.UPLOAD_ROOT_PATH }}
+
+      - name: 整理包
+        working-directory: ${{ env.UPLOAD_ROOT_PATH }}
+        run: |
+          mkdir package-upload
+          zip -r ./package-upload/Artifacts.zip package
+
+
+      - name: 整理包生成 release body
+        run: |
+          echo 编译完成于$(date +"%Y年%m月%d日%H时%m分%s秒") >> $UPLOAD_ROOT_PATH/release.txt
+          echo "编译的openwrt版本/分支: " $OPENWRT_TAG_BRANCH >> $UPLOAD_ROOT_PATH/release.txt
+          echo "编译使用的配置: " ${{ matrix.config }} >> $UPLOAD_ROOT_PATH/release.txt
+          latest_ver="$(curl -s -L --retry 6 https://api.github.com/repos/${{ github.repository }}/releases 2>/dev/null | grep -E 'tag_name' | grep -E '(${{ matrix.target }}-${{ matrix.subtarget }})' | grep -E "($OPENWRT_TAG_BRANCH)" | sed -e 's/    "tag_name": "//' -e 's/",//' | sed -n '1p')"
+          echo latest_ver=$latest_ver
+          rm -rf $PACKAGECOMPARE_ROOT_PATH/*
+          curl -s -L --retry 6 https://github.com/${{ github.repository }}/releases/download/${latest_ver}/allkmod.zip -o $PACKAGECOMPARE_ROOT_PATH/allkmod.zip -nv  || exit 0
+          curl -s -L --retry 6 https://github.com/${{ github.repository }}/releases/download/${latest_ver}/package.zip -o $PACKAGECOMPARE_ROOT_PATH/package.zip -nv  || exit 0
+          cd $PACKAGECOMPARE_ROOT_PATH
+          unzip package.zip || exit 0
+          unzip allkmod.zip || exit 0
+          mv package oldpackage
+          mv kmod oldkmod
+          cp -rf oldkmod/* oldpackage/
+          ls $PACKAGECOMPARE_ROOT_PATH/oldpackage/|sort| uniq >oldpackage.list
+          sed -i -e "s/_${{ matrix.targetarchpackages }}.ipk//g" -e "s/_all.ipk//g" oldpackage.list
+          rm -rf $PACKAGECOMPARE_ROOT_PATH/package.zip $PACKAGECOMPARE_ROOT_PATH/allkmod.zip
+          cp -f $UPLOAD_ROOT_PATH/package-upload/package.zip $PACKAGECOMPARE_ROOT_PATH/package.zip
+          cp -f $UPLOAD_ROOT_PATH/package-upload/allkmod.zip $PACKAGECOMPARE_ROOT_PATH/allkmod.zip
+          unzip package.zip
+          unzip allkmod.zip
+          mv package newpackage
+          mv kmod newkmod
+          cp -rf newkmod/* newpackage/
+          ls $PACKAGECOMPARE_ROOT_PATH/newpackage/|sort| uniq >newpackage.list
+          sed -i -e "s/_${{ matrix.targetarchpackages }}.ipk//g" -e "s/_all.ipk//g" newpackage.list && echo "list complete"
+          echo "内核版本: "$(sed -n '/kernel_/p' newpackage.list | sed -e 's/kernel_//') >> $UPLOAD_ROOT_PATH/release.txt
+          echo "包更改/版本升级列表" >> $UPLOAD_ROOT_PATH/release.txt
+          diff oldpackage.list newpackage.list -y -B -b |grep -E '[\|><]' >diff.temp && echo "Compare complete" || echo "没有包新增删除或版本升级" >> $UPLOAD_ROOT_PATH/release.txt
+          sed -e "/</s/^/delete:/g" -e "/|/s/^/update:/g" -e "/>/s/^/Add:/g" -e 's/[[:space:]]//g' -e 's/<//g' -e 's/>//g' -e 's/|/ > /g' -e 's/> [a-zA-Z0-9\-]*_/> /g' -e 's/_/ /g' diff.temp >> $UPLOAD_ROOT_PATH/release.txt || echo "没有包新增删除或版本升级"
+
+      - name: 上传固件到 Release
+        id: firmware-release
+        uses: softprops/action-gh-release@v0.1.15
+        with:
+          name: ${{ env.RELEASE_NAME }}
+          tag_name: ${{ env.RELEASE_TAG_NAME }}
+          files: |
+            ${{ env.UPLOAD_ROOT_PATH }}/${{ matrix.target }}/${{ matrix.subtarget }}/*
+            ${{ env.UPLOAD_ROOT_PATH }}/package-upload/*
+          body_path: ${{ env.UPLOAD_ROOT_PATH }}/release.txt
+
