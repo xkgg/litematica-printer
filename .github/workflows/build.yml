@@ -39,10 +39,6 @@ jobs:
           name: Artifacts
           path: ./**/build/libs/*.jar
 
-
-    name: upload-${{ matrix.config }}
-    runs-on: ubuntu-22.04
-    steps:
       - name: 将存储库签出到运行器
         uses: actions/checkout@v4
 
