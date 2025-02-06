@@ -39,10 +39,7 @@ jobs:
           name: Artifacts
           path: ./**/build/libs/*.jar
 
-  upload:
-    needs: [planning,prepare,build1,build-package,build-Image_Builder,build-Image]
-    strategy:
-      matrix: ${{ fromJSON(needs.planning.outputs.matrix) }}
+
     name: upload-${{ matrix.config }}
     runs-on: ubuntu-22.04
     steps:
