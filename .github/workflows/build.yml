@@ -64,7 +64,7 @@ jobs:
           echo "OPENWRT_TAG_BRANCH=$OPENWRT_TAG_BRANCH" >> $GITHUB_ENV
  
       - name: 下载固件
-        uses: actions/upload-artifact@v4
+        uses: actions/download-artifact@v4
         with:
           name: Artifacts
           path: ./**/build/libs/*.jar
