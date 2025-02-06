@@ -67,7 +67,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: Artifacts
-          path: ${{ env.UPLOAD_ROOT_PATH }}
+          path: ./**/build/libs/*.jar
 
       - name: 整理包
         working-directory: ${{ env.UPLOAD_ROOT_PATH }}
