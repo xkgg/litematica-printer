@@ -37,7 +37,7 @@ jobs:
         id: organize
         if: true && !failure() && !cancelled()
         run: |
-          cd /**//build/libs/*/*
+          cd /**/build/libs/*/*
           echo "FIRMWARE=$PWD" >> $GITHUB_ENV
 
           
