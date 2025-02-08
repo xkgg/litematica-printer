@@ -43,7 +43,7 @@ jobs:
         id: tag
         if: true && !failure() && !cancelled()
         run: |
-          echo "{release_tag}={$(date +"%Y.%m.%d-%H%M")}" >> "$GITHUB_OUTPUT"
+          echo "{release_tag}={{$(date +"%Y.%m.%d-%H%M")}" >> "$GITHUB_OUTPUT"
           echo "{status}={success}" >> "$GITHUB_OUTPUT"          
         
       - name: 上传固件以发布
@@ -51,7 +51,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{release_tag}}
+          tag_name: test
           files: ${{ env.FIRMWARE }}/*
   
           asset_path: ./**/build/libs/*.jar
