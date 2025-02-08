@@ -44,7 +44,7 @@ jobs:
         uses: actions/create - release@v1
         id: create_release
         with:
-          tag_name: {$(date +"%Y.%m.%d-%H%M")}
+          tag_name: date +"%Y.%m.%d-%H%M"
           release_name: master
           draft: false
           prerelease: false
