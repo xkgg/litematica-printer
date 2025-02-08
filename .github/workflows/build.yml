@@ -32,15 +32,7 @@ jobs:
         run: ./gradlew :v1_19_3:build
       - name: build 1.20.1
         run: ./gradlew :v1_20:build
-        
-      - name: Organize files
-        id: organize
-        if: true && !failure() && !cancelled()
-        run: |
-          cd /**/build/libs/*/*
-          echo "FIRMWARE=$PWD" >> $GITHUB_ENV
-
-          
+     
       - name: 捕获生成工件
         uses: actions/upload-artifact@v4
         with:
@@ -63,3 +55,4 @@ jobs:
           tag_name: ${{ steps.tag.outputs.release_tag }}
           files: ${{ env.FIRMWARE }}/*
   
+          asset_path: ./**/build/libs/*.jar
