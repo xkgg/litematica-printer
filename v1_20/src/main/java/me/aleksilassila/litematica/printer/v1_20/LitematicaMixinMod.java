@@ -24,6 +24,7 @@ public class LitematicaMixinMod implements ModInitializer {
     //    public static final ConfigBoolean PRINT_WATER    = new ConfigBoolean("printWater",    false, "Whether the printer should place water\n source blocks or make blocks waterlogged.");
 //    public static final ConfigBoolean PRINT_IN_AIR = new ConfigBoolean("printInAir", true, "Whether or not the printer should place blocks without anything to build on.\nBe aware that some anti-cheat plugins might notice this.");
     public static final ConfigBoolean PRINT_MODE = new ConfigBoolean("printingMode", false, "Autobuild / print loaded selection.\nBe aware that some servers and anticheat plugins do not allow printing.");
+	public static final ConfigBooleanHotkeyed BEDROCK_SWITCH = new ConfigBooleanHotkeyed("破基岩", false,"", "啊吧啊吧");
     public static final ConfigBoolean REPLACE_FLUIDS_SOURCE_BLOCKS = new ConfigBoolean("replaceFluidSourceBlocks", true, "Whether or not fluid source blocks should be replaced by the printer.");
     public static final ConfigBoolean STRIP_LOGS = new ConfigBoolean("stripLogs", true, "Whether or not the printer should use normal logs if stripped\nversions are not available and then strip them with an axe.");
 
