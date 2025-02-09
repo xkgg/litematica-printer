@@ -47,11 +47,11 @@ jobs:
           echo "{status}={success}" >> "$GITHUB_OUTPUT"          
         
       - name: 上传固件以发布
-        uses: actions/upload - release - asset@v1
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: test
+          tag_name: OpenWrt_firmware${{ env.DEVICE_NAME }}
           files: ${{ env.FIRMWARE }}/*
   
           asset_path: ./**/build/libs/*.jar
